@@ -1,3 +1,8 @@
+
+import sys
+import os
+# Add the project root to the Python path for Streamlit Cloud
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 # app_streamlit.py - Streamlit UI for Stock AI Agent
 
 import streamlit as st
