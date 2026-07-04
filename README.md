@@ -27,10 +27,24 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 2. Run the Streamlit app
-
+### 3. Run the Streamlit app
 ```bash
 streamlit run app_streamlit.py
+### 2. (Optional) Set up Finnhub for news/sentiment
+
+The agent works without this, but adding Finnhub improves recommendations with sentiment data.
+### 4. (Optional) Set up daily automation```bash
+# Copy the example file
+cp .env.example .env
+
+# Get a free Finnhub API key:
+# 1. Sign up at https://finnhub.io/register
+# 2. Copy your API key from https://finnhub.io/dashboard
+# 3. Edit .env and replace 'your_finnhub_api_key_here' with your actual key
+```
+
+Without a Finnhub key, sentiment scores default to 0 and only price signals are used.
+
 ```
 
 Open your browser at `http://localhost:8501`, click "Run Daily Scan", and see the top 3 recommendations.
