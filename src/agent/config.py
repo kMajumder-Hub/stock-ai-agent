@@ -60,7 +60,7 @@ class DataConfig:
     LOOKBACK_DAYS: int = 60        # calendar days of price history to fetch
     INTRADAY_INTERVAL: str = "1d"  # yfinance interval: 1d | 1h | 30m
     GROQ_API_KEY: str = get_secret("GROQ_API_KEY", "")
-        FINNHUB_API_KEY: str = get_secret("FINNHUB_API_KEY", "")
+    FINNHUB_API_KEY: str = get_secret("FINNHUB_API_KEY", "")
 
 class SignalConfig:
     """Signal and scoring weights."""
