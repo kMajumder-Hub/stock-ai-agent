@@ -8,3 +8,4 @@ python-dotenv>=1.0.0
 finnhub-python>=2.4.20
 schedule>=1.2.0
 ta>=0.11.0
+groq>=0.4.0
