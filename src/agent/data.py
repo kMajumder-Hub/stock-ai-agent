@@ -99,8 +99,11 @@ def fetch_finnhub_sentiment(ticker: str) -> Dict[str, float]:
     Returns dict with sentiment_score and news_count.
     """
     if not DataConfig.FINNHUB_API_KEY:
-        return {'sentiment_score': 0.0, 'news_count': 0}
-    
+        raise ValueError(
+            "FINNHUB_API_KEY is required but not set. "
+            "Please add your Finnhub API key to .env file. "
+            "Get a free key at https://finnhub.io/register"
+        )    
     try:
         import finnhub
         finnhub_client = finnhub.Client(api_key=DataConfig.FINNHUB_API_KEY)
@@ -156,8 +159,8 @@ def fetch_finnhub_sentiment(ticker: str) -> Dict[str, float]:
     
     except Exception as e:
         print(f"Error fetching Finnhub sentiment for {ticker}: {e}")
-        return {'sentiment_score': 0.0, 'news_count': 0}
-
+        print(f"Error fetching Finnhub sentiment for {ticker}: {e}")
+        raise  # Re-raise the error instead of returning default values
 
 def get_all_features_with_sentiment() -> pd.DataFrame:
     """
