@@ -1,4 +1,5 @@
 # data.py - Data fetching and feature engineering
+from groq import Groq
 
 import yfinance as yf
 import pandas as pd
@@ -182,3 +183,60 @@ def get_all_features_with_sentiment() -> pd.DataFrame:
             rows.append(features)
     
     return pd.DataFrame(rows)
+
+
+
+def analyze_with_groq_llm(ticker: str, news_headlines: List[str]) -> Dict[str, any]:
+    """
+    Use Groq LLM to analyze news headlines and generate sentiment + rationale.
+    Returns dict with llm_sentiment_score and llm_rationale.
+    """
+    if not DataConfig.GROQ_API_KEY:
+        raise ValueError(
+            "GROQ_API_KEY is required but not set. "
+            "Please add your Groq API key to .env file. "
+            "Get a free key at https://console.groq.com/"
+        )
+    
+    try:
+        client = Groq(api_key=DataConfig.GROQ_API_KEY)
+        
+        # Prepare prompt with news headlines
+        headlines_text = "\n".join([f"- {h}" for h in news_headlines[:10]]) if news_headlines else "No recent news"
+        
+        prompt = f"""Analyze the following news headlines for stock ticker {ticker} and provide:
+1. A sentiment score from -1 (very negative) to +1 (very positive)
+2. A brief rationale (1-2 sentences) explaining the sentiment
+
+News headlines:
+{headlines_text}
+
+Respond in JSON format: {{"sentiment_score": <float>, "rationale": "<string>"}}"""
+        
+        response = client.chat.completions.create(
+            model="mixtral-8x7b-32768",  # Free tier model
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.3,
+            max_tokens=200
+        )
+        
+        result_text = response.choices[0].message.content
+        
+        # Parse JSON response
+        import json
+        try:
+            result = json.loads(result_text)
+            return {
+                'llm_sentiment_score': float(result.get('sentiment_score', 0.0)),
+                'llm_rationale': result.get('rationale', 'No rationale provided')
+            }
+        except json.JSONDecodeError:
+            # If LLM doesn't return valid JSON, try to extract sentiment
+            return {
+                'llm_sentiment_score': 0.0,
+                'llm_rationale': result_text[:200]  # Use raw response
+            }
+    
+    except Exception as e:
+        print(f"Error using Groq LLM for {ticker}: {e}")
+        raise  # Re-raise the error instead of returning default values
