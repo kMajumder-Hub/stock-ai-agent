@@ -112,10 +112,10 @@ def get_all_features() -> pd.DataFrame:
 # Finnhub News & Sentiment Integration
 # ────────────────────────────────────────────────────────────────────────────────
 
-def fetch_finnhub_sentiment(ticker: str) -> Dict[str, float]:
+def fetch_finnhub_sentiment(ticker: str) -> Dict[str, Any]:
     """
     Fetch news sentiment for a ticker from Finnhub.
-    Returns dict with sentiment_score and news_count.
+    Returns dict with sentiment_score, news_count, and headlines.
     """
     if not DataConfig.FINNHUB_API_KEY:
         raise ValueError(
@@ -137,15 +137,17 @@ def fetch_finnhub_sentiment(ticker: str) -> Dict[str, float]:
         news = finnhub_client.company_news(clean_ticker, _from=from_date, to=to_date)
         
         if not news:
-            return {'sentiment_score': 0.0, 'news_count': 0}
+            return {'sentiment_score': 0.0, 'news_count': 0, 'headlines': []}
         
-        # Get sentiment for each news article
+        headlines = []
         sentiments = []
+
         for article in news[:10]:  # Limit to 10 most recent
             headline = article.get('headline', '')
             summary = article.get('summary', '')
-            
             if headline or summary:
+                headlines.append(headline or summary)
+                
                 # Use Finnhub's sentiment analysis
                 sentiment_result = finnhub_client.news_sentiment([clean_ticker])
                 if sentiment_result and 'sentiment' in sentiment_result:
@@ -168,12 +170,13 @@ def fetch_finnhub_sentiment(ticker: str) -> Dict[str, float]:
                 if pos_count + neg_count > 0:
                     score = (pos_count - neg_count) / (pos_count + neg_count)
                     sentiments.append(score)
-        
+
         avg_sentiment = sum(sentiments) / len(sentiments) if sentiments else 0.0
         
         return {
             'sentiment_score': avg_sentiment,
-            'news_count': len(news)
+            'news_count': len(news),
+            'headlines': headlines
         }
     
     except Exception as e:
@@ -193,7 +196,11 @@ def get_all_features_with_sentiment() -> pd.DataFrame:
     for ticker, df in price_data.items():
         features = compute_features(df)
         if features:
-            sentiment_data = {'sentiment_score': 0.0, 'news_count': 0}
+            sentiment_data = {
+                'sentiment_score': 0.0,
+                'news_count': 0,
+                'headlines': []
+            }
             if DataConfig.FINNHUB_API_KEY:
                 try:
                     sentiment_data = fetch_finnhub_sentiment(ticker)
@@ -202,6 +209,7 @@ def get_all_features_with_sentiment() -> pd.DataFrame:
 
             features['sentiment_score'] = sentiment_data['sentiment_score']
             features['news_count'] = sentiment_data['news_count']
+            features['headlines'] = sentiment_data.get('headlines', [])
             features['ticker'] = ticker
             rows.append(features)
 
@@ -262,4 +270,7 @@ Respond in JSON format: {{"sentiment_score": <float>, "rationale": "<string>"}}"
     
     except Exception as e:
         print(f"Error using Groq LLM for {ticker}: {e}")
-        raise  # Re-raise the error instead of returning default values
+        return {
+            'llm_sentiment_score': 0.0,
+            'llm_rationale': f"Error calling Groq LLM: {e}"
+        }

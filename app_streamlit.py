@@ -40,6 +40,8 @@ if st.button("🔄 Run Daily Scan", type="primary"):
                         
                         st.write(f"**Last Close**: ${rec['last_close']}")
                         st.write(f"**Rationale**: {rec['rationale']}")
+                        st.write(f"**AI Sentiment Score**: {rec['llm_sentiment_score']}")
+                        st.markdown(f"**AI Interpretation**: {rec['llm_rationale']}")
         
         except Exception as e:
             st.error(f"Error running scan: {str(e)}")

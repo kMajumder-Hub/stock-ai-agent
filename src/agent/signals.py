@@ -3,8 +3,8 @@
 import pandas as pd
 import numpy as np
 from typing import List, Dict
-from .config import SignalConfig
-from .data import get_all_features_with_sentiment
+from .config import DataConfig, SignalConfig
+from .data import get_all_features_with_sentiment, analyze_with_groq_llm
 
 
 def apply_risk_filters(df: pd.DataFrame) -> pd.DataFrame:
@@ -83,14 +83,27 @@ def get_daily_recommendations() -> List[Dict]:
     
     recommendations = []
     for _, row in ranked.iterrows():
+        ai_interpretation = {
+            'llm_sentiment_score': 0.0,
+            'llm_rationale': 'No AI interpretation available.'
+        }
+        if DataConfig.GROQ_API_KEY:
+            try:
+                headlines = row.get('headlines', []) if isinstance(row.get('headlines', []), list) else []
+                ai_interpretation = analyze_with_groq_llm(row['ticker'], headlines)
+            except Exception as e:
+                ai_interpretation['llm_rationale'] = f"AI interpretation error: {e}"
+
         rec = {
             'ticker': row['ticker'],
             'score': round(row['signal_score'], 2),
             'returns_5d': round(row['returns_5d'] * 100, 2),
             'volatility': round(row['annualized_vol'] * 100, 1),
             'last_close': round(row['last_close'], 2),
-                        'sentiment_score': round(row.get('sentiment_score', 0.0), 2),
+            'sentiment_score': round(row.get('sentiment_score', 0.0), 2),
             'news_count': int(row.get('news_count', 0)),
+            'llm_sentiment_score': round(ai_interpretation.get('llm_sentiment_score', 0.0), 2),
+            'llm_rationale': ai_interpretation.get('llm_rationale', 'No AI interpretation available.'),
             'rationale': f"Strong momentum ({row['returns_5d']*100:.1f}% 5d return), "
                         f"moderate volatility ({row['annualized_vol']*100:.1f}%)"
         }
