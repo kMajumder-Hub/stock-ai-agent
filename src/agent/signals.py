@@ -64,7 +64,7 @@ def rank_candidates() -> pd.DataFrame:
     # Compute scores
     if not df.empty:    
     # Sort by score descending
-    df = df.sort_values('signal_score', ascending=False)
+        df = df.sort_values('signal_score', ascending=False)
     
     # Return top N
     top_n = df.head(SignalConfig.TOP_N)
