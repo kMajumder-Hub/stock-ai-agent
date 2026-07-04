@@ -58,12 +58,11 @@ def rank_candidates() -> pd.DataFrame:
     df = get_all_features_with_sentiment()
 
     # Apply filters
-    if df.emp:
-        df = apply_risk_filters(df)
+    if not df.empty:
+                df = apply_risk_filters(df)
     
     # Compute scores
-    df['signal_score'] = df.apply(compute_signal_score, axis=1)
-    
+    if not df.empty:    
     # Sort by score descending
     df = df.sort_values('signal_score', ascending=False)
     
