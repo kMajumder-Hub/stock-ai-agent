@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 from typing import List, Dict
 from .config import SignalConfig
-from .data import get_all_featuresget_all_features_with_sentiment
+from .data import get_all_features_with_sentiment
 
 
 def apply_risk_filters(df: pd.DataFrame) -> pd.DataFrame:
