@@ -5,7 +5,7 @@ import yfinance as yf
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
-from typing import Dict, List
+from typing import Dict, List, Any
 from .config import DataConfig, UniverseConfig
 
 
@@ -186,7 +186,7 @@ def get_all_features_with_sentiment() -> pd.DataFrame:
 
 
 
-def analyze_with_groq_llm(ticker: str, news_headlines: List[str]) -> Dict[str, any]:
+def analyze_with_groq_llm(ticker: str, news_headlines: List[str]) -> Dict[str, Any]:
     """
     Use Groq LLM to analyze news headlines and generate sentiment + rationale.
     Returns dict with llm_sentiment_score and llm_rationale.
