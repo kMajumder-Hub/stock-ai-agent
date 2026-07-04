@@ -40,8 +40,8 @@ def compute_signal_score(row: pd.Series) -> float:
     score = (
         SignalConfig.MOMENTUM_WEIGHT * momentum_score +
         SignalConfig.VOLATILITY_WEIGHT * vol_score +
-        SignalConfig.VOLUME_WEIGHT * volume_score
-                SignalConfig.SENTIMENT_WEIGHT * sentiment_score +
+        SignalConfig.VOLUME_WEIGHT * volume_score +
+                SignalConfig.SENTIMENT_WEIGHT * sentiment_score
     )
     
     return score
