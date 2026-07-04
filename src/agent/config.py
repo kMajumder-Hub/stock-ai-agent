@@ -2,14 +2,23 @@
 
 # Helper function to get secrets from Streamlit Cloud or .env
 def get_secret(key: str, default: str = "") -> str:
-    """Get secret from Streamlit secrets or environment variable."""
+    """Get secret from environment variables or Streamlit secrets."""
+    env_value = os.getenv(key)
+    if env_value:
+        return env_value
+
     try:
         import streamlit as st
-        if hasattr(st, 'secrets') and key in st.secrets:
-            return st.secrets[key]
+        if hasattr(st, 'secrets'):
+            try:
+                if key in st.secrets:
+                    return st.secrets[key]
+            except Exception:
+                pass
     except ImportError:
         pass  # Streamlit not installed or not in Streamlit environment
-    return os.getenv(key, default)
+
+    return default
 
 # Central configuration for the Stock AI Agent.
 # Edit the values here to customise universe, lookback, and API settings.

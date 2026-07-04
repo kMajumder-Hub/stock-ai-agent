@@ -59,13 +59,13 @@ def rank_candidates() -> pd.DataFrame:
 
     # Apply filters
     if not df.empty:
-                df = apply_risk_filters(df)
-    
-    # Compute scores
-    if not df.empty:    
-    # Sort by score descending
+        df = apply_risk_filters(df)
+
+    # Compute scores and sort
+    if not df.empty:
+        df['signal_score'] = df.apply(compute_signal_score, axis=1)
         df = df.sort_values('signal_score', ascending=False)
-    
+
     # Return top N
     top_n = df.head(SignalConfig.TOP_N)
     

@@ -36,29 +36,47 @@ def compute_features(price_df: pd.DataFrame) -> Dict[str, float]:
     """
     if price_df.empty or len(price_df) < 10:
         return {}
-    
+
     close = price_df['Close']
     volume = price_df['Volume']
-    
+
+    if isinstance(close, pd.DataFrame):
+        close = close.iloc[:, 0]
+    close = close.squeeze()
+    if isinstance(volume, pd.DataFrame):
+        volume = volume.iloc[:, 0]
+    volume = volume.squeeze()
+
+    close = close.dropna()
+    volume = volume.dropna()
+    if close.empty or volume.empty or len(close) < 10:
+        return {}
+
+    def _to_scalar(value):
+        if isinstance(value, (pd.Series, pd.Index, pd.DataFrame)):
+            value = value.iloc[-1] if len(value) else np.nan
+        return float(value) if pd.notna(value) else 0.0
+
     # Momentum features
-    returns_1d = close.pct_change(1).iloc[-1]
-    returns_5d = close.pct_change(5).iloc[-1]
-    returns_10d = close.pct_change(10).iloc[-1]
-    
+    returns_1d = _to_scalar(close.pct_change(1).iloc[-1])
+    returns_5d = _to_scalar(close.pct_change(5).iloc[-1])
+    returns_10d = _to_scalar(close.pct_change(10).iloc[-1])
+
     # Volatility
     daily_returns = close.pct_change()
-    volatility = daily_returns.std()
+    volatility = float(daily_returns.std())
     annualized_vol = volatility * np.sqrt(252)
-    
+
     # Volume
-    avg_volume = volume.mean()
-    last_close = close.iloc[-1]
+    avg_volume = float(volume.mean())
+    last_close = _to_scalar(close.iloc[-1])
     avg_dollar_volume = avg_volume * last_close
-    
+
     # Relative strength (vs 20-day MA)
     ma_20 = close.rolling(20).mean().iloc[-1]
-    rel_strength = (last_close / ma_20 - 1) if ma_20 > 0 else 0
-    
+    ma_20 = _to_scalar(ma_20)
+    rel_strength = (last_close / ma_20 - 1) if ma_20 > 0 else 0.0
+
     return {
         'returns_1d': returns_1d,
         'returns_5d': returns_5d,
@@ -170,18 +188,23 @@ def get_all_features_with_sentiment() -> pd.DataFrame:
     """
     tickers = UniverseConfig.all_tickers()
     price_data = fetch_prices(tickers, DataConfig.LOOKBACK_DAYS)
-    
+
     rows = []
     for ticker, df in price_data.items():
         features = compute_features(df)
         if features:
-            # Add sentiment data
-            sentiment_data = fetch_finnhub_sentiment(ticker)
+            sentiment_data = {'sentiment_score': 0.0, 'news_count': 0}
+            if DataConfig.FINNHUB_API_KEY:
+                try:
+                    sentiment_data = fetch_finnhub_sentiment(ticker)
+                except Exception as e:
+                    print(f"Warning: failed sentiment fetch for {ticker}: {e}")
+
             features['sentiment_score'] = sentiment_data['sentiment_score']
             features['news_count'] = sentiment_data['news_count']
             features['ticker'] = ticker
             rows.append(features)
-    
+
     return pd.DataFrame(rows)
 
 
