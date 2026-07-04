@@ -1,4 +1,4 @@
-# 📈 Stock AI Agent
++ optional Finnhub + Groq LLM for AI analysis
 
 **AI-powered stock market agent** that scans US and Canadian markets daily and recommends top 3 stocks/ETFs based on momentum, volatility, and volume signals.
 
@@ -46,6 +46,18 @@ cp .env.example .env
 Without a Finnhub key, sentiment scores default to 0 and only price signals are used.
 
 ```
+
+### 2a. (Optional) Set up Groq LLM for AI-powered analysis
+
+```bash
+# Get a free Groq API key:
+# 1. Sign up at https://console.groq.com/
+# 2. Copy your API key from the Groq dashboard
+# 3. Edit .env and replace 'your_groq_api_key_here' with your actual key
+```
+
+Without a Groq key, LLM-powered sentiment analysis and rationales will not be available.
+
 
 Open your browser at `http://localhost:8501`, click "Run Daily Scan", and see the top 3 recommendations.
 
