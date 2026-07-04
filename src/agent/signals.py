@@ -55,11 +55,9 @@ def rank_candidates() -> pd.DataFrame:
     3. Compute signal scores
     4. Rank and return top N
     """
-    df = get_allget_all_features_with_sentiment
+        df = get_all_features_with_sentiment()
     
-    if df.empty:
-        return pd.DataFrame()
-    
+    if df.emp
     # Apply filters
     df = apply_risk_filters(df)
     
