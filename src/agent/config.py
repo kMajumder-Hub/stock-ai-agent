@@ -48,6 +48,7 @@ class DataConfig:
     LOOKBACK_DAYS: int = 60        # calendar days of price history to fetch
     INTRADAY_INTERVAL: str = "1d"  # yfinance interval: 1d | 1h | 30m
     FINNHUB_API_KEY: str = os.getenv("FINNHUB_API_KEY", "")  # free-tier key
+        GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")  # free-tier LLM key
 
 
 class SignalConfig:
