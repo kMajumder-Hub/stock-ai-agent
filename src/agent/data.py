@@ -231,10 +231,8 @@ def analyze_with_groq_llm(ticker: str, news_headlines: List[str]) -> Dict[str, A
     
     try:
         client = Groq(api_key=DataConfig.GROQ_API_KEY)
-        
-        # Prepare prompt with news headlines
+
         headlines_text = "\n".join([f"- {h}" for h in news_headlines[:10]]) if news_headlines else "No recent news"
-        
         prompt = f"""Analyze the following news headlines for stock ticker {ticker} and provide:
 1. A sentiment score from -1 (very negative) to +1 (very positive)
 2. A brief rationale (1-2 sentences) explaining the sentiment
@@ -243,31 +241,52 @@ News headlines:
 {headlines_text}
 
 Respond in JSON format: {{"sentiment_score": <float>, "rationale": "<string>"}}"""
-        
-        response = client.chat.completions.create(
-            model=DataConfig.GROQ_MODEL,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.3,
-            max_tokens=200
-        )
-        
-        result_text = response.choices[0].message.content
-        
-        # Parse JSON response
-        import json
-        try:
-            result = json.loads(result_text)
-            return {
-                'llm_sentiment_score': float(result.get('sentiment_score', 0.0)),
-                'llm_rationale': result.get('rationale', 'No rationale provided')
-            }
-        except json.JSONDecodeError:
-            # If LLM doesn't return valid JSON, try to extract sentiment
-            return {
-                'llm_sentiment_score': 0.0,
-                'llm_rationale': result_text[:200]  # Use raw response
-            }
-    
+
+        preferred_model = DataConfig.GROQ_MODEL or "compound-beta-mini"
+        fallback_models = [preferred_model, "compound-beta-mini", "compound-beta", "openai/gpt-oss-20b"]
+        seen = set()
+        fallback_models = [m for m in fallback_models if not (m in seen or seen.add(m))]
+
+        for try_model in fallback_models:
+            try:
+                response = client.chat.completions.create(
+                    model=try_model,
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0.3,
+                    max_tokens=200
+                )
+                result_text = response.choices[0].message.content
+
+                import json
+                try:
+                    result = json.loads(result_text)
+                    return {
+                        'llm_sentiment_score': float(result.get('sentiment_score', 0.0)),
+                        'llm_rationale': result.get('rationale', 'No rationale provided')
+                    }
+                except json.JSONDecodeError:
+                    return {
+                        'llm_sentiment_score': 0.0,
+                        'llm_rationale': result_text[:200]
+                    }
+
+            except Exception as e:
+                err_text = str(e).lower()
+                if 'rate limit' in err_text or 'rate_limit_exceeded' in err_text or getattr(e, 'code', None) == 'rate_limit_exceeded':
+                    if try_model == fallback_models[-1]:
+                        return {
+                            'llm_sentiment_score': 0.0,
+                            'llm_rationale': (
+                                "AI interpretation unavailable due to Groq rate limits. "
+                                "Try again in a few seconds or use a lower-cost model."
+                            )
+                        }
+                    continue
+                return {
+                    'llm_sentiment_score': 0.0,
+                    'llm_rationale': f"Error calling Groq LLM: {e}"
+                }
+
     except Exception as e:
         print(f"Error using Groq LLM for {ticker}: {e}")
         return {
