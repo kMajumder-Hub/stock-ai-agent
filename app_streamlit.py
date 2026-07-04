@@ -26,8 +26,7 @@ if st.button("🔄 Run Daily Scan", type="primary"):
         try:
             recommendations = get_daily_recommendations()
             
-            if not recommendations:
-                st.warning("No recommendations found. Check data availability.")
+                if recommendations is None or recommendations.empty:                st.warning("No recommendations found. Check data availability.")
             else:
                 st.success(f"Found {len(recommendations)} top candidates")
                 
