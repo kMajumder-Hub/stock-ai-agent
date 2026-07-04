@@ -245,7 +245,7 @@ News headlines:
 Respond in JSON format: {{"sentiment_score": <float>, "rationale": "<string>"}}"""
         
         response = client.chat.completions.create(
-            model="mixtral-8x7b-32768",  # Free tier model
+            model=DataConfig.GROQ_MODEL,
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3,
             max_tokens=200
