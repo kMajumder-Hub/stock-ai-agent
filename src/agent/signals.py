@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 from typing import List, Dict
 from .config import SignalConfig
-from .data import get_all_features
+from .data import get_all_featuresget_all_features_with_sentiment
 
 
 def apply_risk_filters(df: pd.DataFrame) -> pd.DataFrame:
@@ -33,11 +33,15 @@ def compute_signal_score(row: pd.Series) -> float:
     # Volume score (reward higher liquidity)
     volume_score = np.log10(row['avg_dollar_volume']) - 6  # normalized around 1M
     
+    # Sentiment score (from Finnhub news)
+    sentiment_score = row.get('sentiment_score', 0.0) * 100  # scale to -100 to +100
+    
     # Weighted combination
     score = (
         SignalConfig.MOMENTUM_WEIGHT * momentum_score +
         SignalConfig.VOLATILITY_WEIGHT * vol_score +
         SignalConfig.VOLUME_WEIGHT * volume_score
+                SignalConfig.SENTIMENT_WEIGHT * sentiment_score +
     )
     
     return score
@@ -51,7 +55,7 @@ def rank_candidates() -> pd.DataFrame:
     3. Compute signal scores
     4. Rank and return top N
     """
-    df = get_all_features()
+    df = get_allget_all_features_with_sentiment
     
     if df.empty:
         return pd.DataFrame()
@@ -69,6 +73,7 @@ def rank_candidates() -> pd.DataFrame:
     top_n = df.head(SignalConfig.TOP_N)
     
     return top_n[['ticker', 'signal_score', 'returns_5d', 'annualized_vol', 
+                  'sentiment_score', 'news_count',
                   'avg_dollar_volume', 'last_close']]
 
 
@@ -87,6 +92,8 @@ def get_daily_recommendations() -> List[Dict]:
             'returns_5d': round(row['returns_5d'] * 100, 2),
             'volatility': round(row['annualized_vol'] * 100, 1),
             'last_close': round(row['last_close'], 2),
+                        'sentiment_score': round(row.get('sentiment_score', 0.0), 2),
+            'news_count': int(row.get('news_count', 0)),
             'rationale': f"Strong momentum ({row['returns_5d']*100:.1f}% 5d return), "
                         f"moderate volatility ({row['annualized_vol']*100:.1f}%)"
         }
